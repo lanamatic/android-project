@@ -10,7 +10,11 @@
   <component name="VisualizationToolProject">
     <option name="state">
       <ProjectState>
+<<<<<<< HEAD
         <option name="scale" value="0.744711861498146" />
+=======
+        <option name="scale" value="0.75" />
+>>>>>>> be6a4ff2fe6932fcd3f79fa8a56f48c3d9e55664
       </ProjectState>
     </option>
   </component>
