@@ -2,5 +2,11 @@
     <string name="app_name">MatfActive</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Friends</string>
+    <string name="login">Welcome!</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="login_bt">LOGIN</string>
+    <string name="signup_bt">SIGNUP</string>
+
 
 </resources>
