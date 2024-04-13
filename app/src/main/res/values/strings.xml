@@ -6,6 +6,7 @@
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="login_bt">LOGIN</string>
+    <string name="signup_text">"Don't have an account yet?"</string>
     <string name="signup_bt">SIGNUP</string>
 
 
