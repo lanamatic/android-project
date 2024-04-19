@@ -80,12 +80,12 @@ class SigupActavity : AppCompatActivity() {
 
     private fun addUserToDB(username: String, email: String, uid: String, goal: Int) {
         val user = User(username, email, uid, goal)
-        db.collection("users")
-            .add(user)
+        db.collection("users").document(uid)
+            .set(user)
             .addOnSuccessListener { documentReference ->
-                Log.d(TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
+                Log.d(TAG, "DocumentSnapshot added with ID: ${uid}")
                 //jump to main activity
-                print("uso")
+
                 val intent = Intent(this@SigupActavity, MainActivity::class.java)
                 finish()
                 startActivity(intent)

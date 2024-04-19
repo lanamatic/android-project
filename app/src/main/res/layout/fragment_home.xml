@@ -29,19 +29,17 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/textView4"
+                    android:id="@+id/txtDaily"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="5000"
-                    android:textColor="#ECE5E5"
+                    android:textColor="@color/white"
                     android:textSize="60sp" />
 
                 <TextView
-                    android:id="@+id/textView5"
+                    android:id="@+id/txtGoal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="15dp"
-                    android:text="/10000"
                     android:textColor="#FDF1F1"
                     android:textSize="34sp" />
             </LinearLayout>
@@ -64,16 +62,14 @@
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
                     android:indeterminate="false"
-                    android:progress="50"
                     android:progressDrawable="@drawable/pbdailysteps"
                     app:layout_constraintStart_toStartOf="parent" />
 
                 <TextView
-                    android:id="@+id/textView8"
+                    android:id="@+id/txtProgress"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:layout_weight="50"
-                    android:text="50% done! :)"
                     android:textAlignment="center"
                     android:textColor="#F1E7E7"
                     android:textSize="24sp" />
@@ -94,13 +90,12 @@
                 android:src="@drawable/streak" />
 
             <TextView
-                android:id="@+id/txt_streak"
+                android:id="@+id/txtStreak"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:ems="10"
                 android:layout_margin="5dp"
                 android:fontFamily="sans-serif"
-                android:text="15"
                 android:textColor="#E8DEDE"
                 android:gravity="center_vertical"
                 android:textColorHighlight="#FFFEFE"
@@ -265,14 +260,13 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/txt_pb"
+                android:id="@+id/txtPB"
                 android:layout_margin="15dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="5dp"
                 android:gravity="center_vertical"
                 android:textSize="20dp"
-                android:text="50000"
                 android:textColor="#FFFFFF"
                 tools:ignore="NestedWeights" />
         </LinearLayout>

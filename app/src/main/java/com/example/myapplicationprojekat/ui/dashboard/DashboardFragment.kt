@@ -7,6 +7,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.ListView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -57,10 +59,6 @@ class DashboardFragment : Fragment() {
 //        userRecyclingView.layoutManager = LinearLayoutManager(this)
 //        userRecyclingView.adapter = adapter
 
-        var edttext:TextView = view.findViewById(R.id.test)
-
-
-
         db = FirebaseFirestore.getInstance()
         db.collection("users").get()
             .addOnSuccessListener { documents ->
@@ -71,17 +69,26 @@ class DashboardFragment : Fragment() {
                     val dataEmail = document.data.get("email").toString()
                     val dataUid = document.data.get("uid").toString()
                     val dataGoal = document.data.get("goal_steps").toString().toInt()
-                    val dataUser = User(dataUsername, dataEmail, dataUid, dataGoal)
+                    val dataDaily = document.data.get("todays_steps").toString().toInt()
+                    val dataStreak = document.data.get("streak").toString().toInt()
+                    val dataPB = document.data.get("pb").toString().toInt()
+
+                    val dataUser = User(dataUsername, dataEmail, dataUid, dataGoal, dataDaily, dataStreak, dataPB)
                     userList.add(dataUser)
-                    edttext.text = userList[0].toString()
-                    Log.d(TAG, edttext.text as String)
-                    //print(data)
+
+
                 }
+                val competitors = view.findViewById<ListView>(R.id.competitors)
+                val arrayAdapter: ArrayAdapter<*>
+                //TODO sortiranje i lepsi ispis
+                arrayAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, userList)
+                competitors.adapter = arrayAdapter
+                Log.d(TAG, userList.toString())
+
             }
             .addOnFailureListener { exception ->
                 Log.w(TAG, "Error getting documents: ", exception)
             }
-
 
     }
 
