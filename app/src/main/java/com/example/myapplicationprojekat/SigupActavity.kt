@@ -22,6 +22,7 @@ class SigupActavity : AppCompatActivity() {
     private lateinit var edtPassword: EditText
     private lateinit var edtGoal: EditText
     private lateinit var btnSignup: Button
+    private lateinit var edtConfPassword: EditText
 
     private lateinit var auth: FirebaseAuth
 //    val db = Firebase.firestore
@@ -47,14 +48,26 @@ class SigupActavity : AppCompatActivity() {
         edtEmail = findViewById(R.id.email)
         edtGoal = findViewById(R.id.goal)
         edtPassword = findViewById(R.id.password)
+        edtConfPassword = findViewById(R.id.confirm_password)
 
         btnSignup.setOnClickListener {
             val email = edtEmail.text.toString()
             val pass = edtPassword.text.toString()
+            val confPass = edtConfPassword.text.toString()
             val username = edtUsername.text.toString()
-            val goal: Int = edtGoal.text.toString().toInt()
+            val goal = edtGoal.text.toString()
 
-            signup(username, email, pass, goal)
+            //validation
+            if(email.isNotEmpty() && pass.isNotEmpty() && confPass.isNotEmpty() && username.isNotEmpty() && goal.isNotEmpty()){
+                if(pass == confPass){
+                    signup(username, email, pass, goal.toInt())
+                }else{
+                    Toast.makeText(this@SigupActavity, "Password is not matching!", Toast.LENGTH_SHORT).show()
+                }
+            }else{
+                Toast.makeText(this@SigupActavity, "Empty fields ar not allowed!", Toast.LENGTH_SHORT).show()
+            }
+
         }
     }
 

@@ -26,6 +26,12 @@ class LoginActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
 
         auth = FirebaseAuth.getInstance()
+        //check if user is already logged in
+        if(auth.currentUser != null){
+            val intent = Intent(this@LoginActivity, MainActivity::class.java)
+            finish()
+            startActivity(intent)
+        }
 
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.login_fragment)) { v, insets ->
@@ -47,8 +53,13 @@ class LoginActivity : AppCompatActivity() {
         btnLogin.setOnClickListener {
             val username = edtUsername.text.toString()
             val password = edtPassword.text.toString()
+            //validation
+            if(username.isNotEmpty() && password.isNotEmpty()){
+                login(username, password)
+            }else{
+                Toast.makeText(this@LoginActivity, "Empty fields ar not allowed!", Toast.LENGTH_SHORT).show()
+            }
 
-            login(username, password)
         }
     }
 
@@ -69,4 +80,6 @@ class LoginActivity : AppCompatActivity() {
                 }
             }
     }
+
+
 }
