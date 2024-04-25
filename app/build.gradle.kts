@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.support.annotations)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -68,7 +69,11 @@ dependencies {
     // When using the BoM, don't specify versions in Firebase dependencies
     implementation("com.google.firebase:firebase-analytics")
 //TODO barchart
-//    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    //Charts
+    implementation("com.diogobernardino:williamchart:3.10.1")
+    // Tooltips
+//    implementation("com.diogobernardino.williamchart:tooltip-slider:3.10.1")
+//    implementation("com.diogobernardino.williamchart:tooltip-points:3.10.1")
 
     // Add the dependencies for any other desired Firebase products
     // https://firebase.google.com/docs/android/setup#available-libraries

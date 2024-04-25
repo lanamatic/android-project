@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.myapplicationprojekat.R
@@ -36,6 +35,10 @@ class HomeFragment : Fragment() {
             ViewModelProvider(this).get(HomeViewModel::class.java)
 
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        binding.apply {
+            barChart.animation.duration = HomeFragment.animationDuration
+            barChart.animate(HomeFragment.barSet)
+        }
         val root: View = binding.root
 //
 //        val textView: TextView = binding.textHome
@@ -94,15 +97,25 @@ class HomeFragment : Fragment() {
                 }
             }
         }
-
-
-
-
     }
 
     private fun progress(dataSteps: String, dataGoal: String): Int{
-
         return(dataSteps.toInt()*100/dataGoal.toInt())
+    }
+
+    companion object{
+        //todo zameniti vrednosti
+        private  val barSet= listOf(
+            "MON" to 11325F,
+            "TUE" to 5680F,
+            "WED" to 15006F,
+            "THU" to 9891F,
+            "FRI" to 17121F,
+            "SAT" to 10591F,
+            "SUN" to 12310F
+        )
+
+        private const val animationDuration=1000L
     }
 
     override fun onDestroyView() {

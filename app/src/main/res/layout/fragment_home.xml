@@ -110,13 +110,15 @@
             android:background="#352D2C"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/textView"
+            <com.db.williamchart.view.BarChartView
+                android:id="@+id/barChart"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="BAR PLOT TODO"
-                android:textColor="#C82323"
-                android:textSize="34sp" />
+                android:layout_height="match_parent"
+                android:layout_margin="15dp"
+                app:chart_axis = "x"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"/>
         </LinearLayout>
 
         <LinearLayout
