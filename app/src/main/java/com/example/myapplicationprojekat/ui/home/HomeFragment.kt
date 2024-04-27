@@ -1,6 +1,11 @@
 package com.example.myapplicationprojekat.ui.home
 
 import android.content.ContentValues.TAG
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,18 +13,41 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.myapplicationprojekat.R
 import com.example.myapplicationprojekat.databinding.FragmentHomeBinding
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), SensorEventListener {
 
     private var _binding: FragmentHomeBinding? = null
     private lateinit var db: FirebaseFirestore
-    private lateinit var mAuth: FirebaseAuth
+    private var mAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    private var sensorMenager : SensorManager? = null
+    private var running = false
+    private var totalSteps = 0
+    private var previousTotalSteps = 0f
+
+    private var dataSteps: String = ""
+    private var dataGoal: String  = ""
+    private var dataStreak: String = ""
+    private var dataPB: String  = ""
+
+    private lateinit var txtDaily:TextView
+    private lateinit var txtGoal:TextView 
+    private lateinit var pbDailyProgress:ProgressBar
+    private lateinit var txtProgress:TextView 
+    private lateinit var txtStreak:TextView
+    private lateinit var txtPB:TextView
+
+
+    val user = mAuth.currentUser
+    val uid = user!!.uid
 
 
     // This property is only valid between onCreateView and
@@ -51,17 +79,16 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        //getting data from db
-        mAuth = FirebaseAuth.getInstance()
-        val user = mAuth.currentUser
+        //sensor for steps
+        sensorMenager = activity?.getSystemService(Context.SENSOR_SERVICE) as SensorManager?
 
-        var dataSteps: String = ""
-        var dataGoal: String  = ""
-        var dataStreak: String = ""
-        var dataPB: String  = ""
+
+//        //getting data from db
+
+
 
         db = FirebaseFirestore.getInstance()
-        val uid = user!!.uid
+//        val uid = user!!.uid
         db.collection("users").document(uid).get().addOnCompleteListener{ task ->
             if(task.isSuccessful){
                 val document = task.result
@@ -72,12 +99,12 @@ class HomeFragment : Fragment() {
                     dataPB = document.get("pb").toString()
 
                     //fetching layout elements
-                    val txtDaily:TextView = view.findViewById(R.id.txtDaily)
-                    val txtGoal:TextView = view.findViewById(R.id.txtGoal)
-                    val pbDailyProgress:ProgressBar= view.findViewById(R.id.pbDailySteps)
-                    val txtProgress:TextView = view.findViewById(R.id.txtProgress)
-                    val txtStreak:TextView = view.findViewById(R.id.txtStreak)
-                    val txtPB:TextView = view.findViewById(R.id.txtPB)
+                    txtDaily = view.findViewById(R.id.txtDaily)
+                    txtGoal = view.findViewById(R.id.txtGoal)
+                    pbDailyProgress= view.findViewById(R.id.pbDailySteps)
+                    txtProgress = view.findViewById(R.id.txtProgress)
+                    txtStreak = view.findViewById(R.id.txtStreak)
+                    txtPB = view.findViewById(R.id.txtPB)
 
                     txtDaily.text = dataSteps
                     txtGoal.text = "/" + dataGoal
@@ -97,6 +124,8 @@ class HomeFragment : Fragment() {
                 }
             }
         }
+
+
     }
 
     private fun progress(dataSteps: String, dataGoal: String): Int{
@@ -121,5 +150,57 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        running = true
+        val stepSensor : Sensor? = sensorMenager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+
+        if(stepSensor == null){
+            Toast.makeText(activity, "No sensor detected on this device", Toast.LENGTH_SHORT).show()
+        } else{
+            sensorMenager?.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_UI)
+//            Toast.makeText(activity, "OVDe", Toast.LENGTH_SHORT).show()
+
+        }
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (running){
+            totalSteps = event!!.values[0].toInt()
+
+            writeToDB(totalSteps)
+        }
+    }
+
+    private fun writeToDB(totalSteps: Int) {
+        var steps = 0
+        val doc = db.collection("users").document(uid).get().addOnCompleteListener{ task ->
+            if(task.isSuccessful){
+                val document = task.result
+                if(document.exists()){
+                    steps = document.get("todays_steps").toString().toInt()
+
+                    steps += totalSteps
+                    db.collection("users").document(uid)
+                        .update("todays_steps", steps.toString())
+                        .addOnSuccessListener {
+                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "Error updating document", e)
+                        }
+
+
+
+                }
+            }
+        }
+
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+
     }
 }

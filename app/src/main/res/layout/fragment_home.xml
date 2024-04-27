@@ -107,7 +107,7 @@
             android:layout_width="match_parent"
             android:layout_height="200dp"
             android:layout_margin="15dp"
-            android:background="#352D2C"
+            android:background="@drawable/box1"
             android:orientation="vertical">
 
             <com.db.williamchart.view.BarChartView
@@ -115,6 +115,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_margin="15dp"
+                app:chart_barsColor ="@color/red1"
+                app:chart_labelsColor ="@color/white"
                 app:chart_axis = "x"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
