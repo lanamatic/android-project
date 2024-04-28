@@ -2,26 +2,7 @@
 <project version="4">
   <component name="deploymentTargetDropDown">
     <value>
-      <entry key="LoginActivity">
-        <State />
-      </entry>
-      <entry key="MainActivity">
-        <State>
-          <runningDeviceTargetSelectedWithDropDown>
-            <Target>
-              <type value="RUNNING_DEVICE_TARGET" />
-              <deviceKey>
-                <Key>
-                  <type value="SERIAL_NUMBER" />
-                  <value value="R5CRA1KFJNH" />
-                </Key>
-              </deviceKey>
-            </Target>
-          </runningDeviceTargetSelectedWithDropDown>
-          <timeTargetWasSelectedWithDropDown value="2024-04-28T18:02:17.845031375Z" />
-        </State>
-      </entry>
-      <entry key="SigupActavity">
+      <entry key="app">
         <State />
       </entry>
     </value>

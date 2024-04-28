@@ -1,6 +1,7 @@
 package com.example.myapplicationprojekat.ui.home
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -11,6 +12,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -19,6 +21,7 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.db.williamchart.view.BarChartView
@@ -29,9 +32,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.Calendar
 import java.util.Collections.max
 import java.util.Collections.min
+import java.util.Date
 
 class HomeFragment : Fragment(), SensorEventListener {
 
@@ -63,6 +69,10 @@ class HomeFragment : Fragment(), SensorEventListener {
 
     private val user = mAuth.currentUser
     private val uid = user!!.uid
+
+    private var cal = Calendar.getInstance()
+    private var currentDate = cal.get(Calendar.DAY_OF_YEAR)
+
 
 
     // This property is only valid between onCreateView and
@@ -97,6 +107,7 @@ class HomeFragment : Fragment(), SensorEventListener {
         return root
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -116,6 +127,79 @@ class HomeFragment : Fragment(), SensorEventListener {
         txtAvg = view.findViewById(R.id.avg_num)
 
         readFromDB(true)
+
+        val sharedPref = requireActivity().getSharedPreferences("mySharedPref", Activity.MODE_PRIVATE)
+        val editorProgress = sharedPref.edit()
+
+        val formatter = SimpleDateFormat("yyyy-MM-dd")
+        val date = Date()
+        val current = formatter.format(date)
+        val day = LocalDate.now().dayOfWeek
+        Log.d(TAG, current)
+        Log.d(TAG, day.toString())
+        val today = sharedPref.getString("dateToday", null)
+        val weekDay = sharedPref.getString("dayOfWeek", null)
+//        Log.d(TAG, "LANA " + weekDay.toString())
+//        Log.d(TAG, "LANA " + today.toString())
+
+        if(today == null){
+            editorProgress.apply{
+                putString("dateToday", current)
+//                Log.d(TAG, "da li uopste ulazim ovde")
+                apply()
+            }
+        } else if(current != today){
+            Log.d(TAG,"NOVI DAN")
+            editorProgress.apply {
+                putString("dateToday", current)
+                putInt("steps", totalSteps)
+                apply()
+            }
+            editorProgress.apply {
+                putInt("steps", 0)
+                totalSteps = sharedPref.getInt("steps", 0)
+                db.collection("users").document(uid)
+                    .update("todays_steps", "0")
+                    .addOnSuccessListener {
+                        Log.d(TAG, "DocumentSnapshot successfully updated!")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Error updating document", e)
+                    }
+                readFromDB(false)
+                apply()
+
+            }
+        }
+
+        //TODO: nedelja na nula
+        if(weekDay == null){
+            editorProgress.apply{
+                putString("dayOfWeek", day.toString())
+                apply()
+            }
+        } else if(day.toString() != weekDay && day.toString() == "MONDAY"){
+            Log.d(TAG,"Nova nedelja")
+            editorProgress.apply {
+                putString("dayOfWeek", day.toString())
+                
+                apply()
+            }
+            editorProgress.apply {
+                //TODO: week steps to 0
+//                db.collection("users").document(uid)
+//                    .update("todays_steps", "0")
+//                    .addOnSuccessListener {
+//                        Log.d(TAG, "DocumentSnapshot successfully updated!")
+//                    }
+//                    .addOnFailureListener { e ->
+//                        Log.w(TAG, "Error updating document", e)
+//                    }
+                readFromDB(false)
+                apply()
+
+            }
+        }
 
     }
 
@@ -222,4 +306,6 @@ class HomeFragment : Fragment(), SensorEventListener {
     }
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }
+
+
 }
