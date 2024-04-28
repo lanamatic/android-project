@@ -14,19 +14,18 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.db.williamchart.view.BarChartView
 import com.example.myapplicationprojekat.R
 import com.example.myapplicationprojekat.databinding.FragmentHomeBinding
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 
 class HomeFragment : Fragment(), SensorEventListener {
 
     private var _binding: FragmentHomeBinding? = null
-    private lateinit var db: FirebaseFirestore
+    private var db: FirebaseFirestore = FirebaseFirestore.getInstance()
     private var mAuth: FirebaseAuth = FirebaseAuth.getInstance()
     private var sensorMenager : SensorManager? = null
     private var running = false
@@ -44,15 +43,28 @@ class HomeFragment : Fragment(), SensorEventListener {
     private lateinit var txtProgress:TextView 
     private lateinit var txtStreak:TextView
     private lateinit var txtPB:TextView
+    private lateinit var barChart: BarChartView
 
 
-    val user = mAuth.currentUser
-    val uid = user!!.uid
+    private val user = mAuth.currentUser
+    private val uid = user!!.uid
+
 
 
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+    private val animationDuration=1000L
+    private var barSet= listOf(
+            "MON" to 0F,
+            "TUE" to 0F,
+            "WED" to 0F,
+            "THU" to 0F,
+            "FRI" to 0F,
+            "SAT" to 0F,
+            "SUN" to 0F
+        )
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,31 +76,34 @@ class HomeFragment : Fragment(), SensorEventListener {
 
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         binding.apply {
-            barChart.animation.duration = HomeFragment.animationDuration
-            barChart.animate(HomeFragment.barSet)
+            barChart.animation.duration = animationDuration
+            barChart.run { animate(barSet) }
         }
         val root: View = binding.root
-//
-//        val textView: TextView = binding.textHome
-//        homeViewModel.text.observe(viewLifecycleOwner) {
-//            textView.text = it
-//        }
         return root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
         //sensor for steps
         sensorMenager = activity?.getSystemService(Context.SENSOR_SERVICE) as SensorManager?
 
+        //fetching layout elements
+        txtDaily = view.findViewById(R.id.txtDaily)
+        txtGoal = view.findViewById(R.id.txtGoal)
+        pbDailyProgress= view.findViewById(R.id.pbDailySteps)
+        txtProgress = view.findViewById(R.id.txtProgress)
+        txtStreak = view.findViewById(R.id.txtStreak)
+        txtPB = view.findViewById(R.id.txtPB)
+        barChart = view.findViewById(R.id.barChart)
+
+
 
 //        //getting data from db
-
-
-
+        var week: ArrayList<Float>
         db = FirebaseFirestore.getInstance()
-//        val uid = user!!.uid
         db.collection("users").document(uid).get().addOnCompleteListener{ task ->
             if(task.isSuccessful){
                 val document = task.result
@@ -97,14 +112,19 @@ class HomeFragment : Fragment(), SensorEventListener {
                     dataGoal = document.get("goal_steps").toString()
                     dataStreak = document.get("streak").toString()
                     dataPB = document.get("pb").toString()
-
-                    //fetching layout elements
-                    txtDaily = view.findViewById(R.id.txtDaily)
-                    txtGoal = view.findViewById(R.id.txtGoal)
-                    pbDailyProgress= view.findViewById(R.id.pbDailySteps)
-                    txtProgress = view.findViewById(R.id.txtProgress)
-                    txtStreak = view.findViewById(R.id.txtStreak)
-                    txtPB = view.findViewById(R.id.txtPB)
+                    week = document.get("week_steps") as ArrayList<Float>
+                    if(week.isNotEmpty()) {
+                        barSet = listOf(
+                            "MON" to week.get(0),
+                            "TUE" to week.get(1),
+                            "WED" to week.get(2),
+                            "THU" to week.get(3),
+                            "FRI" to week.get(4),
+                            "SAT" to week.get(5),
+                            "SUN" to week.get(6)
+                        )
+                    }
+                    barChart.run { animate(barSet) }
 
                     txtDaily.text = dataSteps
                     txtGoal.text = "/" + dataGoal
@@ -112,7 +132,6 @@ class HomeFragment : Fragment(), SensorEventListener {
                     txtProgress.text = progress(dataSteps,dataGoal).toString() + "% finished"
                     txtStreak.text = dataStreak
                     txtPB.text = dataPB
-//                    Log.d(TAG, dataGoal.toString() + " " + dataSteps.toString() + " " + dataStreak)
                 }
                 else{
                     Log.d(TAG, "The document does not exits :(")
@@ -124,27 +143,10 @@ class HomeFragment : Fragment(), SensorEventListener {
                 }
             }
         }
-
-
     }
 
     private fun progress(dataSteps: String, dataGoal: String): Int{
         return(dataSteps.toInt()*100/dataGoal.toInt())
-    }
-
-    companion object{
-        //todo zameniti vrednosti
-        private  val barSet= listOf(
-            "MON" to 11325F,
-            "TUE" to 5680F,
-            "WED" to 15006F,
-            "THU" to 9891F,
-            "FRI" to 17121F,
-            "SAT" to 10591F,
-            "SUN" to 12310F
-        )
-
-        private const val animationDuration=1000L
     }
 
     override fun onDestroyView() {
@@ -165,7 +167,6 @@ class HomeFragment : Fragment(), SensorEventListener {
 
         }
     }
-
     override fun onSensorChanged(event: SensorEvent?) {
         if (running){
             totalSteps = event!!.values[0].toInt()
@@ -173,7 +174,6 @@ class HomeFragment : Fragment(), SensorEventListener {
             writeToDB(totalSteps)
         }
     }
-
     private fun writeToDB(totalSteps: Int) {
         var steps = 0
         val doc = db.collection("users").document(uid).get().addOnCompleteListener{ task ->
@@ -191,16 +191,11 @@ class HomeFragment : Fragment(), SensorEventListener {
                         .addOnFailureListener { e ->
                             Log.w(TAG, "Error updating document", e)
                         }
-
-
-
                 }
             }
         }
 
     }
-
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-
     }
 }
