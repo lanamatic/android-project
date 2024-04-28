@@ -1,7 +1,12 @@
 package com.example.myapplicationprojekat.ui.home
 
+import android.annotation.SuppressLint
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.ContentValues.TAG
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -21,49 +26,58 @@ import com.example.myapplicationprojekat.R
 import com.example.myapplicationprojekat.databinding.FragmentHomeBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import java.util.Calendar
+import java.util.Collections.max
+import java.util.Collections.min
 
 class HomeFragment : Fragment(), SensorEventListener {
 
     private var _binding: FragmentHomeBinding? = null
     private var db: FirebaseFirestore = FirebaseFirestore.getInstance()
     private var mAuth: FirebaseAuth = FirebaseAuth.getInstance()
-    private var sensorMenager : SensorManager? = null
+    private var sensorMenager: SensorManager? = null
     private var running = false
     private var totalSteps = 0
     private var previousTotalSteps = 0f
 
     private var dataSteps: String = ""
-    private var dataGoal: String  = ""
+    private var dataGoal: String = ""
     private var dataStreak: String = ""
-    private var dataPB: String  = ""
+    private var dataPB: String = ""
 
-    private lateinit var txtDaily:TextView
-    private lateinit var txtGoal:TextView 
-    private lateinit var pbDailyProgress:ProgressBar
-    private lateinit var txtProgress:TextView 
-    private lateinit var txtStreak:TextView
-    private lateinit var txtPB:TextView
+
+    private lateinit var txtDaily: TextView
+    private lateinit var txtGoal: TextView
+    private lateinit var pbDailyProgress: ProgressBar
+    private lateinit var txtProgress: TextView
+    private lateinit var txtStreak: TextView
+    private lateinit var txtPB: TextView
     private lateinit var barChart: BarChartView
+    private lateinit var txtMin: TextView
+    private lateinit var txtMax: TextView
+    private lateinit var txtAvg: TextView
 
 
     private val user = mAuth.currentUser
     private val uid = user!!.uid
 
 
-
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
-    private val animationDuration=1000L
-    private var barSet= listOf(
-            "MON" to 0F,
-            "TUE" to 0F,
-            "WED" to 0F,
-            "THU" to 0F,
-            "FRI" to 0F,
-            "SAT" to 0F,
-            "SUN" to 0F
-        )
+    private val animationDuration = 1000L
+    private var barSet = listOf(
+        "MON" to 0F,
+        "TUE" to 0F,
+        "WED" to 0F,
+        "THU" to 0F,
+        "FRI" to 0F,
+        "SAT" to 0F,
+        "SUN" to 0F
+    )
 
 
     override fun onCreateView(
@@ -86,67 +100,27 @@ class HomeFragment : Fragment(), SensorEventListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
         //sensor for steps
         sensorMenager = activity?.getSystemService(Context.SENSOR_SERVICE) as SensorManager?
 
         //fetching layout elements
         txtDaily = view.findViewById(R.id.txtDaily)
         txtGoal = view.findViewById(R.id.txtGoal)
-        pbDailyProgress= view.findViewById(R.id.pbDailySteps)
+        pbDailyProgress = view.findViewById(R.id.pbDailySteps)
         txtProgress = view.findViewById(R.id.txtProgress)
         txtStreak = view.findViewById(R.id.txtStreak)
         txtPB = view.findViewById(R.id.txtPB)
         barChart = view.findViewById(R.id.barChart)
+        txtMin = view.findViewById(R.id.min_num)
+        txtMax = view.findViewById(R.id.max_num)
+        txtAvg = view.findViewById(R.id.avg_num)
 
+        readFromDB(true)
 
-
-//        //getting data from db
-        var week: ArrayList<Float>
-        db = FirebaseFirestore.getInstance()
-        db.collection("users").document(uid).get().addOnCompleteListener{ task ->
-            if(task.isSuccessful){
-                val document = task.result
-                if(document.exists()){
-                    dataSteps = document.get("todays_steps").toString()
-                    dataGoal = document.get("goal_steps").toString()
-                    dataStreak = document.get("streak").toString()
-                    dataPB = document.get("pb").toString()
-                    week = document.get("week_steps") as ArrayList<Float>
-                    if(week.isNotEmpty()) {
-                        barSet = listOf(
-                            "MON" to week.get(0),
-                            "TUE" to week.get(1),
-                            "WED" to week.get(2),
-                            "THU" to week.get(3),
-                            "FRI" to week.get(4),
-                            "SAT" to week.get(5),
-                            "SUN" to week.get(6)
-                        )
-                    }
-                    barChart.run { animate(barSet) }
-
-                    txtDaily.text = dataSteps
-                    txtGoal.text = "/" + dataGoal
-                    pbDailyProgress.progress = progress(dataSteps, dataGoal)
-                    txtProgress.text = progress(dataSteps,dataGoal).toString() + "% finished"
-                    txtStreak.text = dataStreak
-                    txtPB.text = dataPB
-                }
-                else{
-                    Log.d(TAG, "The document does not exits :(")
-                }
-            }
-            else{
-                task.exception?.message?.let {
-                    Log.d(TAG, it)
-                }
-            }
-        }
     }
 
-    private fun progress(dataSteps: String, dataGoal: String): Int{
-        return(dataSteps.toInt()*100/dataGoal.toInt())
+    private fun progress(dataSteps: String, dataGoal: String): Int {
+        return (dataSteps.toInt() * 100 / dataGoal.toInt())
     }
 
     override fun onDestroyView() {
@@ -157,29 +131,80 @@ class HomeFragment : Fragment(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         running = true
-        val stepSensor : Sensor? = sensorMenager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+        val stepSensor: Sensor? = sensorMenager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
 
-        if(stepSensor == null){
+        if (stepSensor == null) {
             Toast.makeText(activity, "No sensor detected on this device", Toast.LENGTH_SHORT).show()
-        } else{
+        } else {
             sensorMenager?.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_UI)
 //            Toast.makeText(activity, "OVDe", Toast.LENGTH_SHORT).show()
 
         }
     }
+
     override fun onSensorChanged(event: SensorEvent?) {
-        if (running){
+        if (running) {
             totalSteps = event!!.values[0].toInt()
 
             writeToDB(totalSteps)
+            readFromDB(false)
         }
     }
-    private fun writeToDB(totalSteps: Int) {
-        var steps = 0
-        val doc = db.collection("users").document(uid).get().addOnCompleteListener{ task ->
-            if(task.isSuccessful){
+
+    private fun readFromDB(animtionFlag: Boolean) {
+        var week: ArrayList<Float>
+        db = FirebaseFirestore.getInstance()
+        db.collection("users").document(uid).get().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
                 val document = task.result
-                if(document.exists()){
+                if (document.exists()) {
+                    dataSteps = document.get("todays_steps").toString()
+                    dataGoal = document.get("goal_steps").toString()
+                    dataStreak = document.get("streak").toString()
+                    dataPB = document.get("pb").toString()
+                    week = document.get("week_steps") as ArrayList<Float>
+                    if (week.isNotEmpty()) {
+                        barSet = listOf(
+                            "MON" to week.get(0),
+                            "TUE" to week.get(1),
+                            "WED" to week.get(2),
+                            "THU" to week.get(3),
+                            "FRI" to week.get(4),
+                            "SAT" to week.get(5),
+                            "SUN" to week.get(6)
+                        )
+                        txtMin.text = week.min().toString()
+                        txtMax.text = week.max().toString()
+                        txtAvg.text = (week.sum() / 7.0).toString()
+                    }
+                    if (animtionFlag) {
+                        barChart.run { animate(barSet) }
+                    }
+
+                    txtDaily.text = dataSteps
+                    txtGoal.text = "/" + dataGoal
+                    pbDailyProgress.progress = progress(dataSteps, dataGoal)
+                    txtProgress.text = progress(dataSteps, dataGoal).toString() + "% finished"
+                    txtStreak.text = dataStreak
+                    txtPB.text = dataPB
+                } else {
+                    Log.d(TAG, "The document does not exits :(")
+                }
+            } else {
+                task.exception?.message?.let {
+                    Log.d(TAG, it)
+                }
+            }
+        }
+
+    }
+
+    private fun writeToDB(totalSteps: Int){
+        var steps = 0
+        val doc = db.collection("users").document(uid).get().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val document = task.result
+                if (document.exists()) {
                     steps = document.get("todays_steps").toString().toInt()
 
                     steps += totalSteps
@@ -194,7 +219,6 @@ class HomeFragment : Fragment(), SensorEventListener {
                 }
             }
         }
-
     }
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }

@@ -16,6 +16,7 @@ import com.example.myapplicationprojekat.User
 import com.example.myapplicationprojekat.databinding.FragmentDashboardBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 
 class DashboardFragment : Fragment() {
 
@@ -55,7 +56,7 @@ class DashboardFragment : Fragment() {
 //        userRecyclingView.adapter = adapter
 
         db = FirebaseFirestore.getInstance()
-        db.collection("users").get()
+        db.collection("users").orderBy("todays_steps", Query.Direction.DESCENDING).whereGreaterThan("todays_steps", "0").get()
             .addOnSuccessListener { documents ->
                 for (document in documents) {
                     // Access document data

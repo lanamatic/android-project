@@ -7,8 +7,9 @@
         android:id="@+id/txt_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/box"
         android:layout_margin="15dp"
-        android:text="Anja Milutinoivic"
+        android:text="text"
         android:textSize="30sp"
         android:textColor="@color/white"
         android:textStyle="bold" />

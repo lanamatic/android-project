@@ -37,7 +37,7 @@ class User {
     }
 
     override fun toString(): String {
-        return this.username + "\t" + this.todays_steps + " / "+ this.goal_steps
+        return this.username + "    " + this.todays_steps + " steps "
     }
 
 
