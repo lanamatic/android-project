@@ -156,10 +156,24 @@ class HomeFragment : Fragment(), SensorEventListener {
                 apply()
             }
             editorProgress.apply {
+                readFromDB(false)
+                var newStreak: Int = 0
+                var newPb: Int = 0
+                if(dataSteps.toInt() > dataGoal.toInt()){
+                    newStreak = dataStreak.toInt() + 1
+                }
+                if(dataSteps.toInt() > dataPB.toInt()){
+                    newPb = dataSteps.toInt()
+                }
                 putInt("steps", 0)
                 totalSteps = sharedPref.getInt("steps", 0)
+
                 db.collection("users").document(uid)
-                    .update("todays_steps", "0")
+                    .update(mapOf(
+                        "todays_steps" to 0,
+                        "pb" to newPb,
+                        "streak" to newStreak
+                    ))
                     .addOnSuccessListener {
                         Log.d(TAG, "DocumentSnapshot successfully updated!")
                     }
@@ -171,8 +185,6 @@ class HomeFragment : Fragment(), SensorEventListener {
 
             }
         }
-
-        //TODO: nedelja na nula
         if(weekDay == null){
             editorProgress.apply{
                 putString("dayOfWeek", day.toString())
@@ -186,15 +198,19 @@ class HomeFragment : Fragment(), SensorEventListener {
                 apply()
             }
             editorProgress.apply {
-                //TODO: week steps to 0
-//                db.collection("users").document(uid)
-//                    .update("todays_steps", "0")
-//                    .addOnSuccessListener {
-//                        Log.d(TAG, "DocumentSnapshot successfully updated!")
-//                    }
-//                    .addOnFailureListener { e ->
-//                        Log.w(TAG, "Error updating document", e)
-//                    }
+                val week_steps: ArrayList<Int>? = ArrayList<Int>(7).apply {
+                    for (i in 0 until 7) {
+                        add(0)
+                    }
+                }
+                db.collection("users").document(uid)
+                    .update("week_steps", week_steps)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "DocumentSnapshot successfully updated!")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Error updating document", e)
+                    }
                 readFromDB(false)
                 apply()
 
@@ -291,9 +307,13 @@ class HomeFragment : Fragment(), SensorEventListener {
                 if (document.exists()) {
                     steps = document.get("todays_steps").toString().toInt()
 
+                    var pb = 0
                     steps += totalSteps
+                    if(steps > dataPB.toInt()) {
+                        pb = steps
+                    }
                     db.collection("users").document(uid)
-                        .update("todays_steps", steps.toString())
+                        .update( mapOf("todays_steps" to steps.toString(), "pb" to pb))
                         .addOnSuccessListener {
                             Log.d(TAG, "DocumentSnapshot successfully updated!")
                         }

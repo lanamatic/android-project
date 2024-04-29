@@ -13,7 +13,7 @@ class User {
     var pb: Int = 0
     var week_steps: ArrayList<Int>? = ArrayList<Int>(7).apply {
         for (i in 0 until 7) {
-            add(1000 + i * 1000)
+            add(0)
         }
     }
 
