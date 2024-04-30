@@ -55,6 +55,8 @@ class DashboardFragment : Fragment() {
 //        userRecyclingView.layoutManager = LinearLayoutManager(this)
 //        userRecyclingView.adapter = adapter
 
+        val context = requireContext() // Store the context safely
+
         db = FirebaseFirestore.getInstance()
         db.collection("users").orderBy("todays_steps", Query.Direction.DESCENDING).whereGreaterThan("todays_steps", 0).get()
             .addOnSuccessListener { documents ->
@@ -76,8 +78,8 @@ class DashboardFragment : Fragment() {
                 }
                 val competitors = view.findViewById<ListView>(R.id.competitors)
                 val arrayAdapter: ArrayAdapter<*>
-                //TODO sortiranje i lepsi ispis
-                arrayAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, userList)
+                //TODO lepsi ispis
+                arrayAdapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, userList)
                 competitors.adapter = arrayAdapter
                 Log.d(TAG, userList.toString())
 

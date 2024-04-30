@@ -45,9 +45,9 @@ class HomeFragment : Fragment(), SensorEventListener {
     private var db: FirebaseFirestore = FirebaseFirestore.getInstance()
     private var mAuth: FirebaseAuth = FirebaseAuth.getInstance()
     private var sensorMenager: SensorManager? = null
+
     private var running = false
     private var totalSteps = 0
-    private var previousTotalSteps = 0f
 
     private var dataSteps: String = ""
     private var dataGoal: String = ""
@@ -70,8 +70,6 @@ class HomeFragment : Fragment(), SensorEventListener {
     private val user = mAuth.currentUser
     private val uid = user!!.uid
 
-    private var cal = Calendar.getInstance()
-    private var currentDate = cal.get(Calendar.DAY_OF_YEAR)
 
 
 
@@ -128,95 +126,6 @@ class HomeFragment : Fragment(), SensorEventListener {
 
         readFromDB(true)
 
-        val sharedPref = requireActivity().getSharedPreferences("mySharedPref", Activity.MODE_PRIVATE)
-        val editorProgress = sharedPref.edit()
-
-        val formatter = SimpleDateFormat("yyyy-MM-dd")
-        val date = Date()
-        val current = formatter.format(date)
-        val day = LocalDate.now().dayOfWeek
-        Log.d(TAG, current)
-        Log.d(TAG, day.toString())
-        val today = sharedPref.getString("dateToday", null)
-        val weekDay = sharedPref.getString("dayOfWeek", null)
-//        Log.d(TAG, "LANA " + weekDay.toString())
-//        Log.d(TAG, "LANA " + today.toString())
-
-        if(today == null){
-            editorProgress.apply{
-                putString("dateToday", current)
-//                Log.d(TAG, "da li uopste ulazim ovde")
-                apply()
-            }
-        } else if(current != today){
-            Log.d(TAG,"NOVI DAN")
-            editorProgress.apply {
-                putString("dateToday", current)
-                putInt("steps", totalSteps)
-                apply()
-            }
-            editorProgress.apply {
-                readFromDB(false)
-                var newStreak: Int = 0
-                var newPb: Int = dataPB.toInt()
-                if(dataSteps.toInt() > dataGoal.toInt()){
-                    newStreak = dataStreak.toInt() + 1
-                }
-                if(dataSteps.toInt() > dataPB.toInt()){
-                    newPb = dataSteps.toInt()
-                }
-                putInt("steps", 0)
-                totalSteps = sharedPref.getInt("steps", 0)
-
-                db.collection("users").document(uid)
-                    .update(mapOf(
-                        "todays_steps" to 0,
-                        "pb" to newPb,
-                        "streak" to newStreak
-                    ))
-                    .addOnSuccessListener {
-                        Log.d(TAG, "DocumentSnapshot successfully updated!")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w(TAG, "Error updating document", e)
-                    }
-                readFromDB(false)
-                apply()
-
-            }
-        }
-        if(weekDay == null){
-            editorProgress.apply{
-                putString("dayOfWeek", day.toString())
-                apply()
-            }
-        } else if(day.toString() != weekDay && day.toString() == "MONDAY"){
-            Log.d(TAG,"Nova nedelja")
-            editorProgress.apply {
-                putString("dayOfWeek", day.toString())
-                
-                apply()
-            }
-            editorProgress.apply {
-                val week_steps: ArrayList<Int>? = ArrayList<Int>(7).apply {
-                    for (i in 0 until 7) {
-                        add(0)
-                    }
-                }
-                db.collection("users").document(uid)
-                    .update("week_steps", week_steps)
-                    .addOnSuccessListener {
-                        Log.d(TAG, "DocumentSnapshot successfully updated!")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w(TAG, "Error updating document", e)
-                    }
-                readFromDB(false)
-                apply()
-
-            }
-        }
-
     }
 
     private fun progress(dataSteps: String, dataGoal: String): Int {
@@ -242,12 +151,144 @@ class HomeFragment : Fragment(), SensorEventListener {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onSensorChanged(event: SensorEvent?) {
         if (running) {
             totalSteps = event!!.values[0].toInt()
 
             writeToDB(totalSteps)
             readFromDB(false)
+
+            //resetting data at midnight
+            resetData()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun resetData() {
+        //using SharedPreferences to store time locally on device
+        val sharedPref = requireActivity().getSharedPreferences("mySharedPref", Activity.MODE_PRIVATE)
+        val editorProgress = sharedPref.edit()
+
+        //getting date, day of the week
+        val formatter = SimpleDateFormat("yyyy-MM-dd")
+        val date = Date()
+        val current = formatter.format(date)
+        val day = LocalDate.now().dayOfWeek
+        val dayNum = day.value  //  1-MONDAY, ..., 7-SUNDAY
+        Log.d(TAG, current)
+        Log.d(TAG, day.toString())
+        Log.d(TAG, dayNum.toString())
+        val today = sharedPref.getString("dateToday", null)
+        val weekDay = sharedPref.getString("dayOfWeek", null)
+
+
+
+        //updating daily steps, pb, streak, barchart day, everyday at midnight
+        if(today == null){
+            editorProgress.apply{
+                putString("dateToday", current)
+                apply()
+            }
+        } else if(current != today){
+            Log.d(TAG,"NOVI DAN")
+            editorProgress.apply {
+                putString("dateToday", current)
+                putInt("steps", totalSteps)
+                apply()
+            }
+            editorProgress.apply {
+                readFromDB(false)
+                var newStreak: Int = 0
+                var newPb: Int = dataPB.toInt()
+                if(dataSteps.toInt() > dataGoal.toInt()){
+                    newStreak = dataStreak.toInt() + 1
+                }
+                if(dataSteps.toInt() > dataPB.toInt()){
+                    newPb = dataSteps.toInt()
+                }
+                putInt("steps", 0)
+                totalSteps = sharedPref.getInt("steps", 0)
+
+                //updating data for day of the week, except transition sunday->monday
+                if(dayNum != 1){
+                    var week: ArrayList<Float>
+                    db.collection("users").document(uid).get().addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val document = task.result
+                            if (document.exists()) {
+                                week = document.get("week_steps") as ArrayList<Float>
+                                if(week.isNotEmpty()){
+                                    week[dayNum - 2] = dataSteps.toFloat()
+
+                                    db.collection("users").document(uid)
+                                        .update("week_steps", week)
+                                        .addOnSuccessListener {
+                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.w(TAG, "Error updating document", e)
+                                        }
+                                }
+//                                Log.d(TAG, week.toString())
+                            } else {
+                                Log.d(TAG, "The document does not exits :(")
+                            }
+                        }
+                    }
+                }
+
+                //updating daily steps, pb, streak
+                db.collection("users").document(uid)
+                    .update(mapOf(
+                        "todays_steps" to 0,
+                        "pb" to newPb,
+                        "streak" to newStreak
+                    ))
+                    .addOnSuccessListener {
+                        Log.d(TAG, "DocumentSnapshot successfully updated!")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Error updating document", e)
+                    }
+
+                readFromDB(false)
+                apply()
+
+            }
+        }
+
+        //resetting weekly data
+        if(weekDay == null){
+            editorProgress.apply{
+                putString("dayOfWeek", day.toString())
+                apply()
+            }
+        } else if(day.toString() != weekDay && day.toString() == "MONDAY"){
+            Log.d(TAG,"Nova nedelja")
+            editorProgress.apply {
+                putString("dayOfWeek", day.toString())
+
+                apply()
+            }
+            editorProgress.apply {
+                val week_steps: ArrayList<Int>? = ArrayList<Int>(7).apply {
+                    for (i in 0 until 7) {
+                        add(0)
+                    }
+                }
+                db.collection("users").document(uid)
+                    .update("week_steps", week_steps)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "DocumentSnapshot successfully updated!")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Error updating document", e)
+                    }
+                readFromDB(false)
+                apply()
+
+            }
         }
     }
 
@@ -273,9 +314,9 @@ class HomeFragment : Fragment(), SensorEventListener {
                             "SAT" to week.get(5),
                             "SUN" to week.get(6)
                         )
-                        txtMin.text = week.min().toString()
-                        txtMax.text = week.max().toString()
-                        txtAvg.text = (week.sum() / 7.0).toString()
+                        txtMin.text = String.format("%.2f", week.min())
+                        txtMax.text = String.format("%.2f", week.max())
+                        txtAvg.text = String.format("%.2f",(week.sum() / 7.0))
                     }
                     if (animtionFlag) {
                         barChart.run { animate(barSet) }
@@ -307,7 +348,7 @@ class HomeFragment : Fragment(), SensorEventListener {
                 if (document.exists()) {
                     steps = document.get("todays_steps").toString().toInt()
 
-                    var pb = 0
+                    var pb = dataPB.toInt()
                     steps += totalSteps
                     if(steps > dataPB.toInt()) {
                         pb = steps
