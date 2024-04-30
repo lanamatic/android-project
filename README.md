@@ -11,7 +11,7 @@ MATFActive je android aplikacija koja broji korake i kroz takmičarski duh treba
 
 _MatfActive is a step counter application that, through a competitive spirit, should encourage students to stay active. Challenge your colleagues and friends, and see who walks the most! Collect as many streaks (MATF logos :D) as you can!_
 
-## Koršćene tehnologije
+## Korišćene tehnologije
 
 Aplikacija je u potpunosti napisana u programskom jeziku Kotlin u razvojnom okruženju Android Studio.\
 Podaci se skladište u Firebase: Firestore bazi podataka. To je fleksibilna, skalabilna neSQL baza podataka, izgrađena na Google Cloud infrastrukturi za skladištenje i sinhornizaciju podataka za razvoj na strani klijenta i servera.
@@ -24,5 +24,7 @@ Data is stored in Firebase: Firestore database. It is a flexible, scalable NoSQL
 <img src="https://github.com/lanamatic/android-project/assets/153326889/fa24c8db-83d7-4805-8776-0e6d87b3fdba" alt="SignUp" width="200"/>
 <img src="https://github.com/lanamatic/android-project/assets/153326889/150c480c-9aa5-4da2-ac48-c693863d0dda" alt="HomeFragment" width="200"/>
 
-
-
+## Autori
+Anja Milutinović 235/2021: [github](https://github.com/amilutinovic)\
+Lana Matić 143/2021: [github](https://github.com/lanamatic)\
+Staša Đorđević 2/2021: [github](https://github.com/stasadjordjevic)
