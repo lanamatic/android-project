@@ -56,7 +56,7 @@ class DashboardFragment : Fragment() {
 //        userRecyclingView.adapter = adapter
 
         db = FirebaseFirestore.getInstance()
-        db.collection("users").orderBy("todays_steps", Query.Direction.DESCENDING).whereGreaterThan("todays_steps", "0").get()
+        db.collection("users").orderBy("todays_steps", Query.Direction.DESCENDING).whereGreaterThan("todays_steps", 0).get()
             .addOnSuccessListener { documents ->
                 for (document in documents) {
                     // Access document data

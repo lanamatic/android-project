@@ -158,7 +158,7 @@ class HomeFragment : Fragment(), SensorEventListener {
             editorProgress.apply {
                 readFromDB(false)
                 var newStreak: Int = 0
-                var newPb: Int = 0
+                var newPb: Int = dataPB.toInt()
                 if(dataSteps.toInt() > dataGoal.toInt()){
                     newStreak = dataStreak.toInt() + 1
                 }
@@ -313,7 +313,7 @@ class HomeFragment : Fragment(), SensorEventListener {
                         pb = steps
                     }
                     db.collection("users").document(uid)
-                        .update( mapOf("todays_steps" to steps.toString(), "pb" to pb))
+                        .update( mapOf("todays_steps" to steps, "pb" to pb))
                         .addOnSuccessListener {
                             Log.d(TAG, "DocumentSnapshot successfully updated!")
                         }
