@@ -126,6 +126,9 @@ class HomeFragment : Fragment(), SensorEventListener {
 
         readFromDB(true)
 
+        //resetting data
+        resetData()
+
     }
 
     private fun progress(dataSteps: String, dataGoal: String): Int {
@@ -166,6 +169,12 @@ class HomeFragment : Fragment(), SensorEventListener {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun resetData() {
+
+        // Check if the fragment is attached to an activity
+        if (!isAdded) {
+            return
+        }
+
         //using SharedPreferences to store time locally on device
         val sharedPref = requireActivity().getSharedPreferences("mySharedPref", Activity.MODE_PRIVATE)
         val editorProgress = sharedPref.edit()
@@ -180,35 +189,36 @@ class HomeFragment : Fragment(), SensorEventListener {
         Log.d(TAG, day.toString())
         Log.d(TAG, dayNum.toString())
         val today = sharedPref.getString("dateToday", null)
-        val weekDay = sharedPref.getString("dayOfWeek", null)
-
+//        val weekDay = sharedPref.getString("dayOfWeek", null)
+        Log.d(TAG, today.toString())
+//        Log.d(TAG, weekDay.toString())
 
 
         //updating daily steps, pb, streak, barchart day, everyday at midnight
         if(today == null){
             editorProgress.apply{
                 putString("dateToday", current)
+//                Log.d(TAG, "ovde")
                 apply()
             }
         } else if(current != today){
             Log.d(TAG,"NOVI DAN")
             editorProgress.apply {
                 putString("dateToday", current)
-                putInt("steps", totalSteps)
                 apply()
             }
             editorProgress.apply {
                 readFromDB(false)
                 var newStreak: Int = 0
                 var newPb: Int = dataPB.toInt()
+                val steps: Int = dataSteps.toInt()
+//                Log.d(TAG, steps.toString())
                 if(dataSteps.toInt() > dataGoal.toInt()){
                     newStreak = dataStreak.toInt() + 1
                 }
                 if(dataSteps.toInt() > dataPB.toInt()){
                     newPb = dataSteps.toInt()
                 }
-                putInt("steps", 0)
-                totalSteps = sharedPref.getInt("steps", 0)
 
                 //updating data for day of the week, except transition sunday->monday
                 if(dayNum != 1){
@@ -219,7 +229,8 @@ class HomeFragment : Fragment(), SensorEventListener {
                             if (document.exists()) {
                                 week = document.get("week_steps") as ArrayList<Float>
                                 if(week.isNotEmpty()){
-                                    week[dayNum - 2] = dataSteps.toFloat()
+//                                    Log.d(TAG, steps.toString())
+                                    week[dayNum - 2] = steps.toFloat()
 
                                     db.collection("users").document(uid)
                                         .update("week_steps", week)
@@ -230,13 +241,15 @@ class HomeFragment : Fragment(), SensorEventListener {
                                             Log.w(TAG, "Error updating document", e)
                                         }
                                 }
-//                                Log.d(TAG, week.toString())
+                                Log.d(TAG, week.toString())
                             } else {
                                 Log.d(TAG, "The document does not exits :(")
                             }
                         }
                     }
                 }
+
+                //readFromDB(false)
 
                 //updating daily steps, pb, streak
                 db.collection("users").document(uid)
@@ -259,12 +272,13 @@ class HomeFragment : Fragment(), SensorEventListener {
         }
 
         //resetting weekly data
-        if(weekDay == null){
-            editorProgress.apply{
-                putString("dayOfWeek", day.toString())
-                apply()
-            }
-        } else if(day.toString() != weekDay && day.toString() == "MONDAY"){
+//        if(weekDay == null){
+//            editorProgress.apply{
+//                putString("dayOfWeek", day.toString())
+//                apply()
+//            }
+//        } else
+        if(day.toString() == "MONDAY"){
             Log.d(TAG,"Nova nedelja")
             editorProgress.apply {
                 putString("dayOfWeek", day.toString())
