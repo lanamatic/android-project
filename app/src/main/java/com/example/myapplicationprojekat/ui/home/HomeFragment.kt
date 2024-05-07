@@ -38,6 +38,7 @@ import java.util.Calendar
 import java.util.Collections.max
 import java.util.Collections.min
 import java.util.Date
+import kotlin.math.max
 
 class HomeFragment : Fragment(), SensorEventListener {
 
@@ -163,7 +164,7 @@ class HomeFragment : Fragment(), SensorEventListener {
             readFromDB(false)
 
             //resetting data at midnight
-            resetData()
+//            resetData()
         }
     }
 
@@ -208,17 +209,38 @@ class HomeFragment : Fragment(), SensorEventListener {
                 apply()
             }
             editorProgress.apply {
+
                 readFromDB(false)
+
                 var newStreak: Int = 0
-                var newPb: Int = dataPB.toInt()
-                val steps: Int = dataSteps.toInt()
-//                Log.d(TAG, steps.toString())
-                if(dataSteps.toInt() > dataGoal.toInt()){
-                    newStreak = dataStreak.toInt() + 1
+                // Parse dataPB, dataStreak, dataSteps and dataGoal only if they are not empty
+                var newPb: Int = if (dataPB.isNotEmpty()) dataPB.toInt() else 0
+                val streak: Int = if (dataStreak.isNotEmpty()) dataStreak.toInt() else 0
+                val steps: Int = if (dataSteps.isNotEmpty()) dataSteps.toInt() else 0
+                val goal: Int = if (dataGoal.isNotEmpty()) dataGoal.toInt() else 0
+
+                Log.d(TAG, "NEW PB: $newPb")
+                Log.d(TAG, "STREAK: $streak")
+                Log.d(TAG, "STEPS: $steps")
+                Log.d(TAG, "GOAL: $goal")
+
+                Log.d(TAG, steps.toString())
+                if(steps > goal){
+                    newStreak = streak + 1
                 }
-                if(dataSteps.toInt() > dataPB.toInt()){
-                    newPb = dataSteps.toInt()
+                if(steps > newPb){
+                    newPb = steps
                 }
+                Log.d(TAG, "NEW PB: $newPb")
+                Log.d(TAG, "NEW STREAK: $newStreak")
+
+
+//                if(dataSteps.toInt() > dataGoal.toInt()){
+//                    newStreak = dataStreak.toInt() + 1
+//                }
+//                if(dataSteps.toInt() > dataPB.toInt()){
+//                    newPb = dataSteps.toInt()
+//                }
 
                 //updating data for day of the week, except transition sunday->monday
                 if(dayNum != 1){
@@ -229,7 +251,7 @@ class HomeFragment : Fragment(), SensorEventListener {
                             if (document.exists()) {
                                 week = document.get("week_steps") as ArrayList<Float>
                                 if(week.isNotEmpty()){
-//                                    Log.d(TAG, steps.toString())
+                                    Log.d(TAG, steps.toString())
                                     week[dayNum - 2] = steps.toFloat()
 
                                     db.collection("users").document(uid)
@@ -286,7 +308,7 @@ class HomeFragment : Fragment(), SensorEventListener {
                 apply()
             }
             editorProgress.apply {
-                val week_steps: ArrayList<Int>? = ArrayList<Int>(7).apply {
+                val week_steps: ArrayList<Int> = ArrayList<Int>(7).apply {
                     for (i in 0 until 7) {
                         add(0)
                     }
@@ -362,11 +384,13 @@ class HomeFragment : Fragment(), SensorEventListener {
                 if (document.exists()) {
                     steps = document.get("todays_steps").toString().toInt()
 
-                    var pb = dataPB.toInt()
+                    var pb = document.get("pb").toString().toInt()
                     steps += totalSteps
-                    if(steps > dataPB.toInt()) {
-                        pb = steps
-                    }
+                    pb = max(pb, steps)
+                    Log.d(TAG, "pb $pb, steps $steps")
+//                    if(steps > pb) {
+//                        pb = steps
+//                    }
                     db.collection("users").document(uid)
                         .update( mapOf("todays_steps" to steps, "pb" to pb))
                         .addOnSuccessListener {
