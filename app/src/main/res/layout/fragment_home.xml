@@ -32,7 +32,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="@color/white"
-                    android:textSize="60sp" />
+                    android:textSize="50sp" />
 
                 <TextView
                     android:id="@+id/txtGoal"
@@ -116,6 +116,8 @@
                 android:layout_margin="15dp"
                 app:chart_barsColor ="@color/red1"
                 app:chart_labelsColor ="@color/white"
+                app:chart_labelsSize="15dp"
+                app:chart_gridStrokeWidth="20dp"
                 app:chart_axis = "x"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"

@@ -17,10 +17,6 @@ dependencyResolutionManagement {
 
         google()
         mavenCentral()
-        //TODO barchart
-//        maven {url
-//            "https://jitpack.io"
-//        }
     }
 }
 
