@@ -1,8 +1,6 @@
 package com.example.myapplicationprojekat.ui.home
 
-import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.ContentValues.TAG
@@ -39,6 +37,7 @@ import java.util.Collections.max
 import java.util.Collections.min
 import java.util.Date
 import kotlin.math.max
+import kotlin.properties.Delegates
 
 class HomeFragment : Fragment(), SensorEventListener {
 
@@ -54,7 +53,6 @@ class HomeFragment : Fragment(), SensorEventListener {
     private var dataGoal: String = ""
     private var dataStreak: String = ""
     private var dataPB: String = ""
-
 
     private lateinit var txtDaily: TextView
     private lateinit var txtGoal: TextView
@@ -160,6 +158,7 @@ class HomeFragment : Fragment(), SensorEventListener {
         if (running) {
             totalSteps = event!!.values[0].toInt()
 
+
             writeToDB(totalSteps)
             readFromDB(false)
 
@@ -193,6 +192,7 @@ class HomeFragment : Fragment(), SensorEventListener {
 //        val weekDay = sharedPref.getString("dayOfWeek", null)
         Log.d(TAG, today.toString())
 //        Log.d(TAG, weekDay.toString())
+
 
 
         //updating daily steps, pb, streak, barchart day, everyday at midnight
@@ -242,34 +242,34 @@ class HomeFragment : Fragment(), SensorEventListener {
 //                    newPb = dataSteps.toInt()
 //                }
 
-                //updating data for day of the week, except transition sunday->monday
-                if(dayNum != 1){
-                    var week: ArrayList<Float>
-                    db.collection("users").document(uid).get().addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            val document = task.result
-                            if (document.exists()) {
-                                week = document.get("week_steps") as ArrayList<Float>
-                                if(week.isNotEmpty()){
-                                    Log.d(TAG, steps.toString())
-                                    week[dayNum - 2] = steps.toFloat()
-
-                                    db.collection("users").document(uid)
-                                        .update("week_steps", week)
-                                        .addOnSuccessListener {
-                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
-                                        }
-                                        .addOnFailureListener { e ->
-                                            Log.w(TAG, "Error updating document", e)
-                                        }
-                                }
-                                Log.d(TAG, week.toString())
-                            } else {
-                                Log.d(TAG, "The document does not exits :(")
-                            }
-                        }
-                    }
-                }
+//                //updating data for day of the week, except transition sunday->monday
+//                if(dayNum != 1){
+//                    var week: ArrayList<Float>
+//                    db.collection("users").document(uid).get().addOnCompleteListener { task ->
+//                        if (task.isSuccessful) {
+//                            val document = task.result
+//                            if (document.exists()) {
+//                                week = document.get("week_steps") as ArrayList<Float>
+//                                if(week.isNotEmpty()){
+//                                    Log.d(TAG, steps.toString())
+//                                    week[dayNum - 2] = steps.toFloat()
+//
+//                                    db.collection("users").document(uid)
+//                                        .update("week_steps", week)
+//                                        .addOnSuccessListener {
+//                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+//                                        }
+//                                        .addOnFailureListener { e ->
+//                                            Log.w(TAG, "Error updating document", e)
+//                                        }
+//                                }
+//                                Log.d(TAG, week.toString())
+//                            } else {
+//                                Log.d(TAG, "The document does not exits :(")
+//                            }
+//                        }
+//                    }
+//                }
 
                 //readFromDB(false)
 
@@ -291,41 +291,36 @@ class HomeFragment : Fragment(), SensorEventListener {
                 apply()
 
             }
-        }
 
-        //resetting weekly data
-//        if(weekDay == null){
-//            editorProgress.apply{
-//                putString("dayOfWeek", day.toString())
-//                apply()
-//            }
-//        } else
-        if(day.toString() == "MONDAY"){
-            Log.d(TAG,"Nova nedelja")
-            editorProgress.apply {
-                putString("dayOfWeek", day.toString())
+            //weekly resetting
+            if(day.toString() == "MONDAY"){
+                Log.d(TAG,"Nova nedelja")
 
-                apply()
-            }
-            editorProgress.apply {
-                val week_steps: ArrayList<Int> = ArrayList<Int>(7).apply {
-                    for (i in 0 until 7) {
-                        add(0)
-                    }
+                editorProgress.apply {
+                    putString("dayOfWeek", day.toString())
+                    apply()
                 }
-                db.collection("users").document(uid)
-                    .update("week_steps", week_steps)
-                    .addOnSuccessListener {
-                        Log.d(TAG, "DocumentSnapshot successfully updated!")
+                editorProgress.apply {
+                    val week_steps: ArrayList<Int> = ArrayList<Int>(7).apply {
+                        for (i in 0 until 7) {
+                            add(0)
+                        }
                     }
-                    .addOnFailureListener { e ->
-                        Log.w(TAG, "Error updating document", e)
-                    }
-                readFromDB(false)
-                apply()
+                    db.collection("users").document(uid)
+                        .update("week_steps", week_steps)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "Error updating document", e)
+                        }
+                    readFromDB(false)
+                    apply()
 
+                }
             }
         }
+
     }
 
     private fun readFromDB(animtionFlag: Boolean) {
@@ -376,8 +371,12 @@ class HomeFragment : Fragment(), SensorEventListener {
 
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun writeToDB(totalSteps: Int){
         var steps = 0
+        val day = LocalDate.now().dayOfWeek
+        val dayNum = day.value  //  1-MONDAY, ..., 7-SUNDAY
+        var week: ArrayList<Float>
         val doc = db.collection("users").document(uid).get().addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val document = task.result
@@ -399,6 +398,22 @@ class HomeFragment : Fragment(), SensorEventListener {
                         .addOnFailureListener { e ->
                             Log.w(TAG, "Error updating document", e)
                         }
+
+                    week = document.get("week_steps") as ArrayList<Float>
+
+                    week[dayNum - 1] = steps.toFloat()
+
+                    db.collection("users").document(uid)
+                        .update("week_steps", week)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "Error updating document", e)
+                        }
+                    Log.d(TAG, week.toString())
+
+
                 }
             }
         }
